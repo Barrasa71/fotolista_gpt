@@ -1,0 +1,55 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "fotocompra-gpt",
+          "appId": "1:444872585677:android:e1fd139e30997103cd9484",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "fotocompra-gpt",
+          "appId": "1:444872585677:ios:2b8b28d97fa4641acd9484",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "fotocompra-gpt",
+          "appId": "1:444872585677:ios:2b8b28d97fa4641acd9484",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "fotocompra-gpt",
+          "configurations": {
+            "android": "1:444872585677:android:e1fd139e30997103cd9484",
+            "ios": "1:444872585677:ios:2b8b28d97fa4641acd9484",
+            "macos": "1:444872585677:ios:2b8b28d97fa4641acd9484",
+            "web": "1:444872585677:web:4eb716504d1137d1cd9484",
+            "windows": "1:444872585677:web:77e9c414b60faea2cd9484"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": []
+    }
+  ]
+}

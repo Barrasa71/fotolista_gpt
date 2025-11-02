@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "444872585677",
+    "project_id": "fotocompra-gpt",
+    "storage_bucket": "fotocompra-gpt.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:444872585677:android:e1fd139e30997103cd9484",
+        "android_client_info": {
+          "package_name": "com.barrasa.fotolista_gpt"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "444872585677-lc71b46fsag3bjs8e587q2idmbktledj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbJPFhX4WkIiMxh3yaL_xLlfQKYv6EocU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "444872585677-lc71b46fsag3bjs8e587q2idmbktledj.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "444872585677-hsvf18gduglre2k7ok0ka7ove95a7kp0.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.barrasa.fotolistaGpt"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

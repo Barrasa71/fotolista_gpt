@@ -48,7 +48,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
       await _auth.signInWithCredential(credential);
 
-      // ✅ Después de iniciar sesión con Google, navega a la pantalla principal:
+      // ✅ Después de iniciar sesión con Google, navega a la pantalla principal (familias):
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const FamilySelectionScreen()),

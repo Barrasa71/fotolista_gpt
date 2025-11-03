@@ -19,6 +19,7 @@ class OcrHelper {
   
   // 🆕 Base de datos de palabras clave para sugerencias de categorías
   // 💡 Nota: Puedes expandir esta lista para más precisión.
+  // ignore: constant_identifier_names
   static const Map<String, String> _CATEGORY_KEYWORDS = {
     'leche': 'Lácteos',
     'yogur': 'Lácteos',

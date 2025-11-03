@@ -49,6 +49,7 @@ class Family {
   }
 
   /// 🔹 Convertir a JSON (para guardar en Firestore)
+  // ignore: unintended_html_in_doc_comment
   /// Convierte el objeto Family a un Map<String, dynamic> para su almacenamiento en Firestore.
   Map<String, dynamic> toJson() {
     // Nota: El 'id' se omite porque es el ID del documento en Firestore.

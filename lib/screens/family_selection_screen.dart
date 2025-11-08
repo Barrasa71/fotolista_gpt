@@ -1,10 +1,12 @@
-// lib/screens/family_selection_screen.dart
+// lib/screens/family_selection_screen.dart (REVISADO)
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+
+// Importamos el nuevo servicio de notificaciones para guardar el token
+import 'package:fotolista_gpt/services/notification_service.dart'; 
 
 import 'package:fotolista_gpt/screens/auth_screen.dart';
 import 'package:fotolista_gpt/screens/family_qr_screen.dart';
@@ -13,11 +15,13 @@ import 'package:fotolista_gpt/screens/shopping_list/shopping_item_screen.dart';
 
 // 🟢 Importaciones Correctas de Servicios:
 import 'package:fotolista_gpt/services/family_services.dart';
-import 'package:fotolista_gpt/services/firestore_service.dart'; // Mantenemos solo para métodos atómicos (deleteFamily)
+import 'package:fotolista_gpt/services/firestore_service.dart';
 import 'package:fotolista_gpt/services/storage_service.dart';
 import 'package:fotolista_gpt/widgets/cached_firebase_image.dart';
 import '../models/family.dart';
 import 'family_qr_scanner.dart';
+
+// Eliminamos el import de flutter_local_notifications
 
 class FamilySelectionScreen extends StatefulWidget {
   const FamilySelectionScreen({super.key});
@@ -29,60 +33,23 @@ class FamilySelectionScreen extends StatefulWidget {
 class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
   // 🟢 Corregido: Usamos el FamilyService de alto nivel para lógica de familia
   final FamilyService _familyService = FamilyService();
-  // 🟢 Mantenemos FirestoreService para operaciones de borrado complejas (ej. deleteFamily)
   final FirestoreService _db = FirestoreService();
   final StorageService _storage = StorageService();
 
   final TextEditingController _familyNameController = TextEditingController();
   final TextEditingController _joinCodeController = TextEditingController();
 
-  final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  // ❌ Eliminamos la inicialización y métodos de local_notifications duplicados
+  // Eliminamos: final FlutterLocalNotificationsPlugin _localNotificationsPlugin = ...
+  // Eliminamos: initState() { _setupPushNotifications(); }
+  // Eliminamos: _setupPushNotifications() y _showLocalNotification()
 
   @override
   void initState() {
     super.initState();
-    _setupPushNotifications();
+    // Ahora, initState está limpio. La inicialización global es en main.dart
   }
-
-  // --- MÉTODOS AUXILIARES ---
-
-  Future<void> _setupPushNotifications() async {
-    await FirebaseMessaging.instance.requestPermission();
-
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosInit = DarwinInitializationSettings();
-    const initSettings =
-        InitializationSettings(android: androidInit, iOS: iosInit);
-    await _localNotificationsPlugin.initialize(initSettings);
-
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      final notification = message.notification;
-      if (notification != null) {
-        _showLocalNotification(notification);
-      }
-    });
-  }
-
-  Future<void> _showLocalNotification(RemoteNotification notification) async {
-    const androidDetails = AndroidNotificationDetails(
-      'default_channel',
-      'Notificaciones',
-      importance: Importance.high,
-      priority: Priority.high,
-    );
-    const iosDetails = DarwinNotificationDetails();
-    const details =
-        NotificationDetails(android: androidDetails, iOS: iosDetails);
-
-    await _localNotificationsPlugin.show(
-      notification.hashCode,
-      notification.title,
-      notification.body,
-      details,
-    );
-  }
-
+  
   @override
   void dispose() {
     _familyNameController.dispose();
@@ -90,13 +57,11 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
     super.dispose();
   }
 
-  // 🟢 CORRECCIÓN CLAVE: Usar _familyService para crear la familia
   Future<void> _createFamily() async {
     final name = _familyNameController.text.trim();
     if (name.isEmpty) return;
     
-    // Antes: await _db.createFamily(name);
-    // Ahora:
+    // Crear la familia y obtener el ID
     await _familyService.createFamily(name); 
     
     _familyNameController.clear();
@@ -105,7 +70,6 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
     }
   }
 
-  // 🟢 El método _joinFamily ya usaba _familyService (¡Perfecto!)
   Future<void> _joinFamily() async {
     final code = _joinCodeController.text.trim();
     if (code.isEmpty) return;
@@ -117,10 +81,15 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
   }
 
   Future<void> _openFamily(String familyId) async {
+    // 🟢 Lógica Centralizada: Usamos el servicio para guardar el token
+    // Esto asegura que el token se actualice con la ID de la familia seleccionada.
+    NotificationService.instance.saveUserFcmToken(familyId: familyId);
+
+    // Subscripción al topic para notificaciones de lista
     try {
       await FirebaseMessaging.instance.subscribeToTopic('family_$familyId');
     } catch (e) {
-      // Manejo de error de subscripción
+      // Manejo de error de subscripción (no bloqueante)
     }
 
     if (!mounted) return;
@@ -132,7 +101,7 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
     );
   }
 
-  // --- FUNCIONES DE DIÁLOGO MODERNIZADAS (sin cambios de lógica) ---
+  // --- FUNCIONES DE DIÁLOGO (sin cambios) ---
 
   Future<void> _showCreateFamilyDialog() async {
     final theme = Theme.of(context);
@@ -274,6 +243,8 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
 
               await FirebaseAuth.instance.signOut();
               if (context.mounted) {
+                // Navegación a AuthScreen que está manejada por MainScreenDecider
+                // Usamos pushAndRemoveUntil con la pantalla que maneja la lógica de Auth
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => const AuthScreen()),
                   (Route<dynamic> route) => false,
@@ -325,14 +296,14 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
           return ListView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             children: [
-              // 🟢 Encabezado Moderno
+              // Encabezado Moderno
               Text(
                 "Tus Espacios de Compra",
                 style: theme.textTheme.headlineMedium
                     ?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 16),
-              // 🟢 Listado de Tarjetas
+              // Listado de Tarjetas
               ...families.map((family) {
                 final colorSeed = family.id.codeUnits.fold(0, (a, b) => a + b);
                 final fallbackColor =
@@ -340,7 +311,7 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  // 🟢 Dismissible con mejor feedback de color
+                  // Dismissible con mejor feedback de color
                   child: Dismissible(
                     key: Key(family.id),
                     direction: DismissDirection.horizontal,
@@ -395,7 +366,7 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
                           ),
                         );
                         if (confirm == true) {
-                          // 🟢 Mantenemos el borrado de imagen y de familia en los servicios de bajo nivel.
+                          // Mantenemos el borrado de imagen y de familia en los servicios de bajo nivel.
                           await _storage.deleteFamilyImage(family.id);
                           await _db.deleteFamily(family.id);
                           if (context.mounted) {
@@ -412,7 +383,7 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
                       }
                       return false;
                     },
-                    // 🟢 Tarjeta Moderna
+                    // Tarjeta Moderna
                     child: Card(
                       elevation: 4, // Resaltar la tarjeta
                       shape: RoundedRectangleBorder(
@@ -423,9 +394,6 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
                               vertical: 12, horizontal: 8),
-                          // 🟢 CORRECCIÓN: Usar el servicio correcto para obtener la imagen si el método existe.
-                          // Si getFamilyImage no está en _db, debe estar en _storage o _familyService.
-                          // Asumo que getFamilyImage sigue en FirestoreService para obtener solo la URL.
                           child: FutureBuilder<String?>(
                             future: _db.getFamilyImage(family.id),
                             builder: (context, snap) {
@@ -445,7 +413,7 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
                                     );
                                   },
                                   child: imageUrl != null
-                                      ? SizedBox( // 🟢 CORRECCIÓN APLICADA: Usamos SizedBox y ClipOval
+                                      ? SizedBox(
                                           width: 48, 
                                           height: 48,
                                           child: ClipOval(
@@ -497,7 +465,7 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
         },
       ),
 
-      // 🟢 Botón Flotante (SpeedDial)
+      // Botón Flotante (SpeedDial)
       floatingActionButton: SpeedDial(
         icon: Icons.add,
         activeIcon: Icons.close,

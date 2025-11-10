@@ -223,18 +223,25 @@ class ItemTile extends StatelessWidget {
                               },
                             ),
                           )
+                        // 👇 INICIO DEL CAMBIO PARA EL ICONO `carro_compra.png`
                         : Container(
                             width: 56,
                             height: 56,
                             decoration: BoxDecoration(
-                              color: Colors.teal,
+                              color: isHistory 
+                                ? Colors.grey[300] 
+                                : Colors.teal, 
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(
-                              isHistory ? Icons.history : Icons.shopping_cart,
-                              color: Colors.white,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0), 
+                              child: Image.asset(
+                                'assets/carro_compra.png', 
+                                color: isHistory ? Colors.black : Colors.white, 
+                              ),
                             ),
                           ),
+                        // 👆 FIN DEL CAMBIO
                   ),
                   const SizedBox(width: 16),
                   

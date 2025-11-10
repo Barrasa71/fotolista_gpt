@@ -102,6 +102,8 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  
   
  
 
@@ -122,3 +124,13 @@ flutter:
 
 flutter_localizations:
   sdk: flutter
+
+
+# pubspec.yaml
+
+# 🎯 CONFIGURACIÓN DEL ICONO DE LA APLICACIÓN
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/carro_compra.png" # ⬅️ Usa la ruta que confirmaste
+  min_sdk_android: 21 # Para compatibilidad (generalmente el valor por defecto)

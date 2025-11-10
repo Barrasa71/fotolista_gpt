@@ -348,7 +348,7 @@ class _AuthScreenState extends State<AuthScreen> {
           borderRadius: BorderRadius.circular(12), // Bordes redondeados
         ),
         filled: true,
-        fillColor: scheme.surfaceVariant.withOpacity(0.2), // Relleno suave
+        fillColor: scheme.surfaceContainerHighest.withOpacity(0.2), // Relleno suave
       ),
       keyboardType: keyboardType,
       style: TextStyle(color: scheme.onSurface),
@@ -379,7 +379,7 @@ class _AuthScreenState extends State<AuthScreen> {
           borderRadius: BorderRadius.circular(12),
         ),
         filled: true,
-        fillColor: scheme.surfaceVariant.withOpacity(0.2),
+        fillColor: scheme.surfaceContainerHighest.withOpacity(0.2),
       ),
       obscureText: isObscure,
       style: TextStyle(color: scheme.onSurface),

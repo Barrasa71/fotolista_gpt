@@ -298,7 +298,7 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
                   onFamilyOpened: () => _openFamily(family.id),
                   onFamilyDeleted: () => _showFamilyDeletedSnackbar(family.name),
                 );
-              }).toList(),
+              }),
             ],
           );
         },

@@ -204,7 +204,7 @@ class _ShoppingItemScreenState extends State<ShoppingItemScreen> {
                             border: OutlineInputBorder(),
                           ),
                           // Establecer el valor inicial aquí
-                          value: selectedCategory, 
+                          initialValue: selectedCategory, 
                           // Usamos la lista 'displayCategories' que incluye la sugerencia
                           items: displayCategories.map((String category) {
                             return DropdownMenuItem<String>(
@@ -895,7 +895,7 @@ class _ShoppingItemScreenState extends State<ShoppingItemScreen> {
         final categories = snapshot.data ?? ['General'];
         // Usamos KeyedSubtree para forzar la reconstrucción de la lista de categorías
         return KeyedSubtree(
-          key: ValueKey('CategorizedList-${categories.length}-${_selectedView}'),
+          key: ValueKey('CategorizedList-${categories.length}-$_selectedView'),
           child: _buildCategorizedList(items, categories, isHistory: isHistory),
         );
       },

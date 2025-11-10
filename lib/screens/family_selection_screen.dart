@@ -1,27 +1,19 @@
-// lib/screens/family_selection_screen.dart (REVISADO)
+// lib/screens/family_selection_screen.dart (REVISADO Y LIMPIO)
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 
-// Importamos el nuevo servicio de notificaciones para guardar el token
-import 'package:fotolista_gpt/services/notification_service.dart'; 
+// Importamos el nuevo widget FamilyCard y el servicio de notificaciones
+import 'package:fotolista_gpt/services/notification_service.dart';
+import 'package:fotolista_gpt/widgets/family_card.dart'; // ¡Nuevo!
 
 import 'package:fotolista_gpt/screens/auth_screen.dart';
-import 'package:fotolista_gpt/screens/family_qr_screen.dart';
-import 'package:fotolista_gpt/screens/family_settings_screen.dart';
 import 'package:fotolista_gpt/screens/shopping_list/shopping_item_screen.dart';
-
-// 🟢 Importaciones Correctas de Servicios:
 import 'package:fotolista_gpt/services/family_services.dart';
-import 'package:fotolista_gpt/services/firestore_service.dart';
-import 'package:fotolista_gpt/services/storage_service.dart';
-import 'package:fotolista_gpt/widgets/cached_firebase_image.dart';
 import '../models/family.dart';
 import 'family_qr_scanner.dart';
-
-// Eliminamos el import de flutter_local_notifications
 
 class FamilySelectionScreen extends StatefulWidget {
   const FamilySelectionScreen({super.key});
@@ -31,25 +23,12 @@ class FamilySelectionScreen extends StatefulWidget {
 }
 
 class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
-  // 🟢 Corregido: Usamos el FamilyService de alto nivel para lógica de familia
-  final FamilyService _familyService = FamilyService();
-  final FirestoreService _db = FirestoreService();
-  final StorageService _storage = StorageService();
+  final FamilyService _familyService = FamilyService(); // Asegúrate que FamilyService sea const si es posible
+  // Nota: Ya no necesitamos FirestoreService ni StorageService aquí, ¡los movimos a FamilyCard!
 
   final TextEditingController _familyNameController = TextEditingController();
   final TextEditingController _joinCodeController = TextEditingController();
 
-  // ❌ Eliminamos la inicialización y métodos de local_notifications duplicados
-  // Eliminamos: final FlutterLocalNotificationsPlugin _localNotificationsPlugin = ...
-  // Eliminamos: initState() { _setupPushNotifications(); }
-  // Eliminamos: _setupPushNotifications() y _showLocalNotification()
-
-  @override
-  void initState() {
-    super.initState();
-    // Ahora, initState está limpio. La inicialización global es en main.dart
-  }
-  
   @override
   void dispose() {
     _familyNameController.dispose();
@@ -57,11 +36,43 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
     super.dispose();
   }
 
+  // --- LÓGICA DE NAVEGACIÓN Y ACCIONES ---
+
+  void _showFamilyDeletedSnackbar(String familyName) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Familia '$familyName' eliminada"),
+      ),
+    );
+  }
+
+  Future<void> _openFamily(String familyId) async {
+    // 1. Guardar/actualizar token FCM para recibir notificaciones
+    NotificationService.instance.saveUserFcmToken(familyId: familyId);
+
+    // 2. Suscripción al topic para notificaciones de lista
+    try {
+      await FirebaseMessaging.instance.subscribeToTopic('family_$familyId');
+    } catch (_) {
+      // Manejo de error de subscripción (no bloqueante)
+    }
+
+    if (!mounted) return;
+    // 3. Navegación a la lista de compra
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ShoppingItemScreen(familyId: familyId),
+      ),
+    );
+  }
+  
+  // (Mantenemos _createFamily y _joinFamily ya que son la lógica de negocio)
+
   Future<void> _createFamily() async {
     final name = _familyNameController.text.trim();
     if (name.isEmpty) return;
     
-    // Crear la familia y obtener el ID
     await _familyService.createFamily(name); 
     
     _familyNameController.clear();
@@ -80,28 +91,7 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
     }
   }
 
-  Future<void> _openFamily(String familyId) async {
-    // 🟢 Lógica Centralizada: Usamos el servicio para guardar el token
-    // Esto asegura que el token se actualice con la ID de la familia seleccionada.
-    NotificationService.instance.saveUserFcmToken(familyId: familyId);
-
-    // Subscripción al topic para notificaciones de lista
-    try {
-      await FirebaseMessaging.instance.subscribeToTopic('family_$familyId');
-    } catch (e) {
-      // Manejo de error de subscripción (no bloqueante)
-    }
-
-    if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ShoppingItemScreen(familyId: familyId),
-      ),
-    );
-  }
-
-  // --- FUNCIONES DE DIÁLOGO (sin cambios) ---
+  // (Mantenemos _showCreateFamilyDialog y _showJoinFamilyDialog)
 
   Future<void> _showCreateFamilyDialog() async {
     final theme = Theme.of(context);
@@ -212,7 +202,7 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
     );
   }
 
-  // --- WIDGET PRINCIPAL ---
+  // --- WIDGET PRINCIPAL LIMPIO ---
 
   @override
   Widget build(BuildContext context) {
@@ -231,7 +221,7 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
             tooltip: "Cerrar sesión",
             onPressed: () async {
               try {
-                // Desuscribirse de todos los topics de familia antes de salir
+                // Desuscribirse de todos los topics antes de salir
                 final families = await _familyService.getUserFamilies().first;
                 for (final family in families) {
                   try {
@@ -243,8 +233,6 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
 
               await FirebaseAuth.instance.signOut();
               if (context.mounted) {
-                // Navegación a AuthScreen que está manejada por MainScreenDecider
-                // Usamos pushAndRemoveUntil con la pantalla que maneja la lógica de Auth
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => const AuthScreen()),
                   (Route<dynamic> route) => false,
@@ -265,6 +253,7 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
           final families = snapshot.data ?? [];
 
           if (families.isEmpty) {
+            // ... (El widget de lista vacía se mantiene igual)
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -293,171 +282,21 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
             );
           }
 
+          // 🟢 USO DEL WIDGET MODULARIZADO
           return ListView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             children: [
-              // Encabezado Moderno
               Text(
                 "Tus Espacios de Compra",
                 style: theme.textTheme.headlineMedium
                     ?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 16),
-              // Listado de Tarjetas
               ...families.map((family) {
-                final colorSeed = family.id.codeUnits.fold(0, (a, b) => a + b);
-                final fallbackColor =
-                    Colors.primaries[colorSeed % Colors.primaries.length];
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  // Dismissible con mejor feedback de color
-                  child: Dismissible(
-                    key: Key(family.id),
-                    direction: DismissDirection.horizontal,
-                    background: Container(
-                      color: theme.colorScheme.secondaryContainer, // Color suave
-                      alignment: Alignment.centerLeft,
-                      padding: const EdgeInsets.only(left: 24),
-                      child: Icon(Icons.settings,
-                          color: theme.colorScheme.onSecondaryContainer,
-                          size: 28),
-                    ),
-                    secondaryBackground: Container(
-                      color: theme.colorScheme.errorContainer, // Color de error
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 24),
-                      child: Icon(Icons.delete_forever,
-                          color: theme.colorScheme.onErrorContainer, size: 28),
-                    ),
-                    confirmDismiss: (direction) async {
-                      if (direction == DismissDirection.startToEnd) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => FamilySettingsScreen(
-                              familyId: family.id,
-                              currentName: family.name,
-                            ),
-                          ),
-                        );
-                        return false;
-                      }
-                      if (direction == DismissDirection.endToStart) {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text("¿Eliminar familia?"),
-                            content: Text(
-                                "Se eliminarán todos los datos de '${family.name}'. ¿Estás seguro?"),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text("Cancelar"),
-                              ),
-                              FilledButton(
-                                style: FilledButton.styleFrom(
-                                    backgroundColor: theme.colorScheme.error),
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text("Eliminar",
-                                    style: TextStyle(color: Colors.white)),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (confirm == true) {
-                          // Mantenemos el borrado de imagen y de familia en los servicios de bajo nivel.
-                          await _storage.deleteFamilyImage(family.id);
-                          await _db.deleteFamily(family.id);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  "Familia '${family.name}' eliminada",
-                                ),
-                              ),
-                            );
-                          }
-                        }
-                        return confirm;
-                      }
-                      return false;
-                    },
-                    // Tarjeta Moderna
-                    child: Card(
-                      elevation: 4, // Resaltar la tarjeta
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () => _openFamily(family.id),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 12, horizontal: 8),
-                          child: FutureBuilder<String?>(
-                            future: _db.getFamilyImage(family.id),
-                            builder: (context, snap) {
-                              final imageUrl = snap.data;
-                              
-                              return ListTile(
-                                leading: GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => FamilySettingsScreen(
-                                          familyId: family.id,
-                                          currentName: family.name,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: imageUrl != null
-                                      ? SizedBox(
-                                          width: 48, 
-                                          height: 48,
-                                          child: ClipOval(
-                                            child: CachedFirebaseImage(
-                                              imageUrl: imageUrl,
-                                            ),
-                                          ),
-                                        )
-                                      : CircleAvatar(
-                                          radius: 24,
-                                          backgroundColor: fallbackColor,
-                                          child: const Icon(Icons.group,
-                                              color: Colors.white),
-                                        ),
-                                ),
-                                title: Text(
-                                  family.name,
-                                  style: theme.textTheme.titleLarge
-                                      ?.copyWith(fontWeight: FontWeight.w600),
-                                ),
-                                subtitle: Text(
-                                  "Toca para abrir la lista",
-                                  style: theme.textTheme.bodyMedium,
-                                ),
-                                trailing: IconButton(
-                                  icon: Icon(Icons.qr_code,
-                                      color: theme.colorScheme.secondary),
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => FamilyQrScreen(
-                                            familyId: family.id),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                return FamilyCard(
+                  family: family,
+                  onFamilyOpened: () => _openFamily(family.id),
+                  onFamilyDeleted: () => _showFamilyDeletedSnackbar(family.name),
                 );
               }).toList(),
             ],
@@ -465,7 +304,7 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
         },
       ),
 
-      // Botón Flotante (SpeedDial)
+      // Botón Flotante (SpeedDial) - Se mantiene igual
       floatingActionButton: SpeedDial(
         icon: Icons.add,
         activeIcon: Icons.close,
@@ -475,7 +314,6 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
         spacing: 10,
         spaceBetweenChildren: 8,
         children: [
-          // Opción 1: Crear Nueva Familia
           SpeedDialChild(
             child: const Icon(Icons.create_new_folder),
             backgroundColor: theme.colorScheme.primary,
@@ -483,7 +321,6 @@ class _FamilySelectionScreenState extends State<FamilySelectionScreen> {
             label: 'Crear Nueva Familia',
             onTap: _showCreateFamilyDialog,
           ),
-          // Opción 2: Unirse a Familia
           SpeedDialChild(
             child: const Icon(Icons.group_add),
             backgroundColor: theme.colorScheme.tertiary,
